@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="py-db-knih",
-    version="1.0.0",
+    version="1.0.2",
     author="ROGR3",  
     author_email="your.email@example.com",  
     description="A Python library for scraping book information from databazeknih.cz",
