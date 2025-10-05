@@ -1,4 +1,4 @@
-# DB Knih API - Python
+# py-db-knih
 
 A Python library for scraping book information from [databazeknih.cz](https://www.databazeknih.cz), the Czech book database.
 
@@ -19,23 +19,20 @@ This is a Python port of the original TypeScript implementation, designed with u
 
 ## Installation
 
-1. Clone or download this repository
-2. Create a virtual environment:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+Install from PyPI:
+
+```bash
+pip install py-db-knih
+```
+
+That's it! The package and all its dependencies will be installed automatically.
 
 ## Usage
 
 ### Basic Usage
 
 ```python
-from __init__ import db_knih
+from db_knih_api import db_knih
 
 # Search for books
 search_results = db_knih.search("harry potter")
@@ -61,9 +58,7 @@ if search_results:
 ### Advanced Usage
 
 ```python
-from book_service import BookService
-from search_service import SearchService
-from fetcher import Fetcher
+from db_knih_api import BookService, SearchService, Fetcher
 
 # Use services independently
 search_service = SearchService()
@@ -108,17 +103,21 @@ User review information:
 
 ## Testing
 
-The codebase includes comprehensive unit tests for all parsing logic and regexes:
+If you want to run the tests (for development), you can clone the repository and run:
 
 ```bash
+# Clone the repository
+git clone https://github.com/ROGR3/py-db-knih.git
+cd py-db-knih
+
+# Install in development mode
+pip install -e .
+
 # Run all tests
-python -m pytest test_*.py -v
+python -m pytest tests/ -v
 
 # Run specific test file
-python -m pytest test_book_service.py -v
-
-# Run with coverage
-python -m pytest test_*.py --cov=. --cov-report=html
+python -m pytest tests/test_book_service.py -v
 ```
 
 ### Test Coverage
@@ -158,27 +157,30 @@ The library handles various error conditions gracefully:
 ## Example Output
 
 ```
-DB Knih API Example
-==================================================
+🔍 DB Knih API - Quick Start
+========================================
 
-1. Searching for 'harry potter'...
-Found 30 books:
-  1. Harry Potter (None) by None
-     ID: 572730, Clean name: potterovsky-pruvodce-mini-potterovky-harry-potter
-  2. Harry Potter a Fénixův řád (None) by None
-     ID: 13, Clean name: harry-potter-harry-potter-a-fenixuv-rad
+📚 Searching for 'harry potter'...
+✅ Found 30 books!
 
-2. Getting detailed info for 'Harry Potter'...
-   Plot: Not available
-   Genres: Not available
-   Year: None
-   Publisher: None
-   Rating: None%
-   Number of ratings: None
-   Pages: 32.0
-   Original language: None
-   ISBN: None
-   Cover: https://www.databazeknih.cz/img/books/57_/572730/bmid_harry-potter.jpg?v=1752940477
+  1. Harry Potter
+     📅 Year: 2025
+     ✍️  Author: J. K. Rowling
+     🆔 ID: 572730
+
+  2. Harry Potter a Fénixův řád
+     📅 Year: 2004
+     ✍️  Author: J. K. Rowling
+     🆔 ID: 13
+
+📖 Getting detailed info for 'Harry Potter'...
+✅ Detailed information:
+   🏷️  Genres: Literatura naučná, Obrazové publikace, Pro děti a mládež
+   ⭐ Rating: 68.0%
+   👥 Ratings: 10.0
+   📄 Pages: 32.0
+   🌍 Language: český
+   📚 ISBN: 9788000077703
 ```
 
 ## License
@@ -187,7 +189,7 @@ MIT License - see the original TypeScript project for details.
 
 ## Contributing
 
-1. Fork the repository
+1. Fork the repository: https://github.com/ROGR3/py-db-knih
 2. Create a feature branch
 3. Add tests for new functionality
 4. Ensure all tests pass

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Advanced usage example for db-knih-api package.
+Advanced usage example for py-db-knih package.
 
 This example demonstrates advanced features like custom services and error handling.
 """

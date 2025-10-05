@@ -4,14 +4,14 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="db-knih-api",
+    name="py-db-knih",
     version="1.0.0",
-    author="Your Name",  # Replace with your name
-    author_email="your.email@example.com",  # Replace with your email
+    author="ROGR3",  
+    author_email="your.email@example.com",  
     description="A Python library for scraping book information from databazeknih.cz",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/db-knih-api",  # Replace with your GitHub URL
+    url="https://github.com/ROGR3/py-db-knih",  # Replace with your GitHub URL
     packages=setuptools.find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick start example for db-knih-api.
+Quick start example for py-db-knih.
 
 This is a simple example that users can run after installing the package.
 """

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Basic usage example for db-knih-api package.
+Basic usage example for py-db-knih package.
 
 This example demonstrates how to search for books and get detailed information.
 """

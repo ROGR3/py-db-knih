@@ -1,3 +1,3 @@
 """
-Test package for db-knih-api.
+Test package for py-db-knih.
 """
