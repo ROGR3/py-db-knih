@@ -2,12 +2,15 @@
 Book service for extracting detailed book information from databazeknih.cz.
 """
 import re
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from .fetcher import Fetcher
 from .models import BookInfo, Review
+
+SoupNode = Union[BeautifulSoup, Tag]
 
 
 class BookService:
@@ -60,7 +63,7 @@ class BookService:
             isbn=self._get_isbn(additional_soup),
         )
     
-    def _get_book_plot(self, book_content: BeautifulSoup) -> Optional[str]:
+    def _get_book_plot(self, book_content: SoupNode) -> Optional[str]:
         """Extract the book plot from the HTML content."""
         # Try multiple selectors for plot/summary
         plot_selectors = [
@@ -98,7 +101,7 @@ class BookService:
         
         return None
     
-    def _get_genres(self, book_content: BeautifulSoup) -> Optional[List[str]]:
+    def _get_genres(self, book_content: SoupNode) -> Optional[List[str]]:
         """Extract genres from the HTML content."""
         # Try multiple selectors for genres
         genre_selectors = [
@@ -120,8 +123,17 @@ class BookService:
         
         return None
     
-    def _get_published_year(self, book_content: BeautifulSoup) -> Optional[int]:
+    def _get_published_year(self, book_content: SoupNode) -> Optional[int]:
         """Extract the published year from the HTML content."""
+        def extract_year(text: str) -> Optional[int]:
+            # databazeknih.cz can contain years outside 19xx/20xx (classic literature).
+            # Also avoid obviously bogus 4-digit numbers that are not years.
+            year_match = re.search(r"\b(1[5-9]\d{2}|20\d{2}|21\d{2})\b", text)
+            if not year_match:
+                return None
+            year_num = self._safe_number_convert(year_match.group(1))
+            return int(year_num) if year_num is not None else None
+
         # Try multiple selectors for year
         year_selectors = [
             ".detail_description > h4",
@@ -134,14 +146,27 @@ class BookService:
             year_elems = book_content.select(selector)
             for elem in year_elems:
                 year_text = elem.get_text(strip=True)
-                # Look for 4-digit year in the text
-                year_match = re.search(r'\b(19|20)\d{2}\b', year_text)
-                if year_match:
-                    return self._safe_number_convert(year_match.group())
+                year = extract_year(year_text)
+                if year is not None:
+                    return year
+
+        # Fallback: some book pages don't expose year in dedicated elements but do include
+        # it in the general metadata text (e.g. "Vydáno: 2018 , Beta-Dobrovský").
+        all_text = book_content.get_text(" ", strip=True)
+        vydano_match = re.search(r"Vydáno:\s*(\d{4})\b", all_text)
+        if vydano_match:
+            year = extract_year(vydano_match.group(1))
+            if year is not None:
+                return year
+
+        # Final fallback: any plausible year anywhere in the text.
+        year = extract_year(all_text)
+        if year is not None:
+            return year
         
         return None
     
-    def _get_author(self, book_content: BeautifulSoup) -> Optional[str]:
+    def _get_author(self, book_content: SoupNode) -> Optional[str]:
         """Extract the author from the HTML content."""
         # Try multiple selectors for author
         author_selectors = [
@@ -159,7 +184,7 @@ class BookService:
         
         return None
     
-    def _get_publisher(self, book_content: BeautifulSoup, additional_content: BeautifulSoup = None) -> Optional[str]:
+    def _get_publisher(self, book_content: SoupNode, additional_content: Optional[SoupNode] = None) -> Optional[str]:
         """Extract the publisher from the HTML content."""
         # Try multiple selectors for publisher
         publisher_selectors = [
@@ -184,7 +209,7 @@ class BookService:
         
         return None
     
-    def _get_rating(self, book_content: BeautifulSoup) -> Optional[float]:
+    def _get_rating(self, book_content: SoupNode) -> Optional[float]:
         """Extract the rating from the HTML content."""
         # Try multiple selectors for rating
         rating_selectors = [
@@ -205,7 +230,7 @@ class BookService:
         
         return None
     
-    def _get_number_of_ratings(self, book_content: BeautifulSoup) -> Optional[int]:
+    def _get_number_of_ratings(self, book_content: SoupNode) -> Optional[int]:
         """Extract the number of ratings from the HTML content."""
         # Try multiple selectors for number of ratings
         ratings_selectors = [
@@ -221,11 +246,12 @@ class BookService:
                 # Look for "X hodnocení" pattern
                 ratings_match = re.search(r'(\d+)\s*hodnocení', rating_text)
                 if ratings_match:
-                    return self._safe_number_convert(ratings_match.group(1))
+                    value = self._safe_number_convert(ratings_match.group(1))
+                    return int(value) if value is not None else None
         
         return None
     
-    def _get_reviews(self, book_content: BeautifulSoup) -> List[Review]:
+    def _get_reviews(self, book_content: SoupNode) -> List[Review]:
         """Extract reviews from the HTML content."""
         review_elements = book_content.select(".komentars_user")[:5]  # Limit to 5 reviews
         
@@ -241,29 +267,31 @@ class BookService:
         
         return reviews
     
-    def _get_review_rating(self, review_elem: BeautifulSoup) -> Optional[float]:
+    def _get_review_rating(self, review_elem: SoupNode) -> Optional[float]:
         """Extract rating from a review element."""
         rating_img = review_elem.select_one(".fright.clear_comm > img")
         if not rating_img:
             return None
         
-        title_attr = rating_img.get("title", "")
+        title_attr = rating_img.get("title")
         if title_attr:
-            rating_text = title_attr.split(" ")[0]
+            title_text = " ".join(title_attr) if isinstance(title_attr, list) else str(title_attr)
+            rating_text = title_text.split(" ")[0]
             return self._safe_number_convert(rating_text)
         
         return None
     
-    def _get_page_count(self, additional_content: BeautifulSoup) -> Optional[int]:
+    def _get_page_count(self, additional_content: SoupNode) -> Optional[int]:
         """Extract page count from additional content."""
         pages_elem = additional_content.select_one('[itemprop="numberOfPages"]')
         if not pages_elem:
             return None
         
         pages_text = pages_elem.get_text(strip=True)
-        return self._safe_number_convert(pages_text)
+        value = self._safe_number_convert(pages_text)
+        return int(value) if value is not None else None
     
-    def _get_original_language(self, additional_content: BeautifulSoup) -> Optional[str]:
+    def _get_original_language(self, additional_content: SoupNode) -> Optional[str]:
         """Extract original language from additional content."""
         # Look for language in the additional info
         # The debug showed "Jazyk vydání: český" pattern
@@ -276,7 +304,7 @@ class BookService:
         language_elem = additional_content.select_one('[itemprop="language"]')
         return language_elem.get_text(strip=True) if language_elem else None
     
-    def _get_isbn(self, additional_content: BeautifulSoup) -> Optional[str]:
+    def _get_isbn(self, additional_content: SoupNode) -> Optional[str]:
         """Extract ISBN from additional content."""
         # Look for ISBN in the additional info
         # The debug showed "ISBN: 97880000777" pattern
@@ -289,20 +317,30 @@ class BookService:
         isbn_elem = additional_content.select_one('[itemprop="isbn"]')
         return isbn_elem.get_text(strip=True) if isbn_elem else None
     
-    def _get_cover_image(self, book_content: BeautifulSoup) -> Optional[str]:
+    def _get_cover_image(self, book_content: SoupNode) -> Optional[str]:
         """Extract cover image URL from the HTML content."""
         cover_elem = book_content.select_one(".kniha_img")
-        return cover_elem.get("src") if cover_elem else None
+        if not cover_elem:
+            return None
+        src = cover_elem.get("src")
+        return str(src) if src else None
     
-    def _get_text_content(self, element: BeautifulSoup, selector: str) -> Optional[str]:
+    def _get_text_content(self, element: SoupNode, selector: str) -> Optional[str]:
         """Get text content from an element using CSS selector."""
         selected_elem = element.select_one(selector)
         return selected_elem.get_text(strip=True) if selected_elem else None
     
-    def _get_attribute(self, element: BeautifulSoup, selector: str, attribute_name: str) -> Optional[str]:
+    def _get_attribute(self, element: SoupNode, selector: str, attribute_name: str) -> Optional[str]:
         """Get attribute value from an element using CSS selector."""
         selected_elem = element.select_one(selector)
-        return selected_elem.get(attribute_name) if selected_elem else None
+        if not selected_elem:
+            return None
+        value = selected_elem.get(attribute_name)
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return " ".join(str(v) for v in value)
+        return str(value)
     
     def _split_and_trim(self, text: Optional[str], separator: str, index: int) -> Optional[str]:
         """Split text by separator and return the element at the given index, trimmed."""

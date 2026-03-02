@@ -82,6 +82,24 @@ class TestBookService:
         
         result = service._get_published_year(soup)
         assert result == 2020
+
+    def test_get_published_year_from_vydano_text(self):
+        """Test published year extraction from 'Vydáno:' metadata text."""
+        html = '<div>Vydáno: 2018 , Beta-Dobrovský</div>'
+        soup = BeautifulSoup(html, 'lxml')
+        service = BookService()
+
+        result = service._get_published_year(soup)
+        assert result == 2018
+
+    def test_get_published_year_allows_1800s(self):
+        """Test published year extraction for classic literature (e.g. 18xx)."""
+        html = '<div class="year">1897</div>'
+        soup = BeautifulSoup(html, 'lxml')
+        service = BookService()
+
+        result = service._get_published_year(soup)
+        assert result == 1897
     
     def test_get_publisher(self):
         """Test publisher extraction."""

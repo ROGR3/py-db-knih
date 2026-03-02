@@ -10,9 +10,9 @@ from .fetcher import Fetcher
 from .models import BookInfo, Review, SearchInfo
 from .search_service import SearchService
 
-__version__ = "1.0.0"
-__author__ = "Your Name"  # Replace with your name
-__email__ = "your.email@example.com"  # Replace with your email
+__version__ = "1.0.3"
+__author__ = "ROGR3"
+__email__ = "your.email@example.com"
 
 # Create a default instance for easy importing
 from .book_service import BookService
